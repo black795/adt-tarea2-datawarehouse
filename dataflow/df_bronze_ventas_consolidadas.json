@@ -1,0 +1,166 @@
+{
+	"name": "df_bronze_ventas_consolidadas",
+	"properties": {
+		"folder": {
+			"name": "bronze"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ventas_sucursal_lpz_csv",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				},
+				{
+					"dataset": {
+						"referenceName": "ventas_sucursal_scz_csv",
+						"type": "DatasetReference"
+					},
+					"name": "source2"
+				},
+				{
+					"dataset": {
+						"referenceName": "ventas_online_csv",
+						"type": "DatasetReference"
+					},
+					"name": "source3"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "select1"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "select3"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "derivedColumn3"
+				},
+				{
+					"name": "union1"
+				},
+				{
+					"name": "union2"
+				},
+				{
+					"name": "derivedColumn4"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          ID_Venta as string,",
+				"          Fecha_Venta as string,",
+				"          Producto as string,",
+				"          Cant as string,",
+				"          PrecioUnit as string,",
+				"          Sucursal as string,",
+				"          Vendedor as string,",
+				"          NombreCliente as string,",
+				"          EmailCliente as string,",
+				"          MetodoPago as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source(output(",
+				"          id_venta as string,",
+				"          fecha as string,",
+				"          producto as string,",
+				"          cantidad as string,",
+				"          precio_unitario as string,",
+				"          sucursal as string,",
+				"          vendedor as string,",
+				"          cliente_nombre as string,",
+				"          cliente_email as string,",
+				"          metodo_pago as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source2",
+				"source(output(",
+				"          order_id as string,",
+				"          timestamp as string,",
+				"          product as string,",
+				"          qty as string,",
+				"          unit_price as string,",
+				"          {customer/name} as string,",
+				"          {customer/email} as string,",
+				"          {customer/city} as string,",
+				"          payment_method as string,",
+				"          status as string,",
+				"          shipping_cost as string,",
+				"          channel as string,",
+				"          customer as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source3",
+				"source1 select(mapColumn(",
+				"          id_transaccion_origen = ID_Venta,",
+				"          fecha_venta = Fecha_Venta,",
+				"          nombre_producto_original = Producto,",
+				"          cantidad = Cant,",
+				"          precio_unitario = PrecioUnit,",
+				"          canal_venta = Sucursal,",
+				"          cliente_nombre = NombreCliente,",
+				"          metodo_pago = MetodoPago",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"source2 select(mapColumn(",
+				"          id_transaccion_origen = id_venta,",
+				"          fecha_venta = fecha,",
+				"          nombre_producto_original = producto,",
+				"          cantidad,",
+				"          precio_unitario,",
+				"          canal_venta = sucursal,",
+				"          cliente_nombre,",
+				"          metodo_pago",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"source3 select(mapColumn(",
+				"          id_transaccion_origen = order_id,",
+				"          fecha_venta = timestamp,",
+				"          nombre_producto_original = product,",
+				"          cantidad = qty,",
+				"          precio_unitario = unit_price,",
+				"          cliente_nombre = {customer/name},",
+				"          metodo_pago = payment_method,",
+				"          costo_envio = shipping_cost,",
+				"          canal_venta = channel",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select3",
+				"select1 derive(canal_venta = \"LPZ\") ~> derivedColumn1",
+				"select2 derive(canal_venta = \"SCZ\") ~> derivedColumn2",
+				"select3 derive(canal_venta = \"ONLINE\") ~> derivedColumn3",
+				"derivedColumn1, derivedColumn2 union(byName: true)~> union1",
+				"union1, derivedColumn3 union(byName: true)~> union2",
+				"union2 derive(fecha_venta = coalesce(    toDate(fecha_venta, 'yyyy-MM-dd'),   \r",
+				" toDate(fecha_venta, 'dd/MM/yyyy'),   \r",
+				"  toDate(fecha_venta, 'MM-dd-yyyy'),   \r",
+				"   toDate(fecha_venta, 'yyyy/MM/dd'),    \r",
+				"   toDate(fecha_venta, 'dd-MMM-yyyy'),   \r",
+				"    toDate(fecha_venta, 'MMMM dd, yyyy'),  \r",
+				"      toDate(fecha_venta, 'dd-MM-yyyy'),   \r",
+				"       toDate(      \r",
+				"          regexReplace(fecha_venta, '(?i) de ', ' '),        'dd MMMM yyyy'    )),",
+				"          nombre_producto_original = initCap(regexReplace(trim(nombre_producto_original),'\\\\s+',' '))) ~> derivedColumn4"
+			]
+		}
+	}
+}

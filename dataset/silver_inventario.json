@@ -1,0 +1,65 @@
+{
+	"name": "silver_inventario",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "dw_ventas",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "silver"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "codigo_producto",
+				"type": "varchar"
+			},
+			{
+				"name": "nombre_producto",
+				"type": "varchar"
+			},
+			{
+				"name": "categoria",
+				"type": "varchar"
+			},
+			{
+				"name": "precio_venta",
+				"type": "decimal",
+				"precision": 18,
+				"scale": 2
+			},
+			{
+				"name": "costo_adquisicion",
+				"type": "decimal",
+				"precision": 18,
+				"scale": 2
+			},
+			{
+				"name": "stock_actual",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "sucursal",
+				"type": "varchar"
+			},
+			{
+				"name": "proveedor",
+				"type": "varchar"
+			},
+			{
+				"name": "ultima_reposicion",
+				"type": "date"
+			},
+			{
+				"name": "activo",
+				"type": "bit"
+			}
+		],
+		"typeProperties": {
+			"schema": "silver",
+			"table": "inventario"
+		}
+	}
+}

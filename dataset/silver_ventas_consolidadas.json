@@ -1,0 +1,79 @@
+{
+	"name": "silver_ventas_consolidadas",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "dw_ventas",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "silver"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "id_transaccion_origen",
+				"type": "varchar"
+			},
+			{
+				"name": "fecha_venta",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "codigo_producto",
+				"type": "varchar"
+			},
+			{
+				"name": "nombre_producto_original",
+				"type": "varchar"
+			},
+			{
+				"name": "cantidad",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "precio_unitario",
+				"type": "decimal",
+				"precision": 18,
+				"scale": 2
+			},
+			{
+				"name": "monto_total",
+				"type": "decimal",
+				"precision": 18,
+				"scale": 2
+			},
+			{
+				"name": "canal_venta",
+				"type": "varchar"
+			},
+			{
+				"name": "cliente_nombre",
+				"type": "varchar"
+			},
+			{
+				"name": "metodo_pago",
+				"type": "varchar"
+			},
+			{
+				"name": "costo_envio",
+				"type": "decimal",
+				"precision": 18,
+				"scale": 2
+			},
+			{
+				"name": "fecha_carga",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "silver",
+			"table": "ventas_consolidadas"
+		}
+	}
+}

@@ -1,0 +1,176 @@
+{
+	"name": "df_bronze_inventario",
+	"properties": {
+		"folder": {
+			"name": "bronze"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "inventario_xlsx",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "silver_inventario",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "derivedColumn3"
+				},
+				{
+					"name": "derivedColumn4"
+				},
+				{
+					"name": "derivedColumn5"
+				},
+				{
+					"name": "derivedColumn6"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "aggregate1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          codigo_producto as string,",
+				"          nombre_producto as string,",
+				"          categoria as string,",
+				"          precio_venta as string,",
+				"          costo_adquisicion as string,",
+				"          stock_actual as string,",
+				"          stock_minimo as string,",
+				"          sucursal as string,",
+				"          proveedor as string,",
+				"          ultima_reposicion as string,",
+				"          activo as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 derive(codigo_producto = trim(codigo_producto),",
+				"          nombre_producto = lower(trim(nombre_producto)),",
+				"          categoria = lower(trim(categoria)),",
+				"          sucursal = trim(sucursal),",
+				"          proveedor = trim(proveedor)) ~> derivedColumn1",
+				"derivedColumn1 derive(nombre_producto = initCap(regexReplace(nombre_producto,'\\\\s+',' '))) ~> derivedColumn2",
+				"derivedColumn2 derive(categoria = case(\r",
+				"  in(['computadoras','laptops','pcs'], categoria), 'Computadoras',\r",
+				"  in(['monitores','pantallas'], categoria), 'Monitores',\r",
+				"  in(['perifericos','periféricos'], categoria), 'Perifericos',\r",
+				"  in(['audio','sonido'], categoria), 'Audio',\r",
+				"  in(['tablets','tabletas'], categoria), 'Tablets',\r",
+				"  in(['impresoras','printers'], categoria), 'Impresoras',\r",
+				"  in(['almacenamiento','storage'], categoria), 'Almacenamiento',\r",
+				"  in(['accesorios','acc.'], categoria), 'Accesorios',\r",
+				"  in(['hardware','componentes'], categoria), 'Componentes',\r",
+				"  in(['redes', 'networking'], categoria), 'Redes',\r",
+				"  categoria\r",
+				")) ~> derivedColumn3",
+				"derivedColumn3 derive(precio_venta = toDecimal(regexReplace(toString (precio_venta), '[^0-9.]', '')),",
+				"          activo = iif(\r",
+				"    in(['si','true','1','yes'],lower(trim(toString(activo))))\r",
+				", true(), false()),",
+				"          sucursal = case(\r",
+				"    in(['SCZ','Santa Cruz','Sta Cruz','santa cruz','sc','sta. cruz'], sucursal), 'Santa Cruz',\r",
+				"    in(['LPZ','La Paz','LP','la paz','L.P.','lapaz','LA PAZ'], sucursal), 'La Paz',\r",
+				"    in(['Cochabamba','cochabamba','COCHABAMBA'], sucursal), 'Cochabamba',\r",
+				"    sucursal\r",
+				")) ~> derivedColumn4",
+				"derivedColumn4 derive(ultima_reposicion = coalesce(\r",
+				"    toDate(ultima_reposicion, 'yyyy-MM-dd'),\r",
+				"    toDate(ultima_reposicion, 'dd/MM/yyyy'),\r",
+				"    toDate(ultima_reposicion, 'MM-dd-yyyy'),\r",
+				"    toDate(ultima_reposicion, 'yyyy/MM/dd'),\r",
+				"    toDate(ultima_reposicion, 'dd-MMM-yyyy'),\r",
+				"    toDate(ultima_reposicion, 'MMMM dd, yyyy'),\r",
+				"    toDate(ultima_reposicion, 'dd-MM-yyyy'),\r",
+				"    toDate(\r",
+				"        regexReplace(ultima_reposicion, '(?i) de ', ' '),\r",
+				"        'dd MMMM yyyy'\r",
+				"    )\r",
+				")) ~> derivedColumn5",
+				"derivedColumn5 derive(precio_venta = iifNull(precio_venta  , 0.0, precio_venta),",
+				"          costo_adquisicion = toDecimal(iifNull(costo_adquisicion, \"0.0\", costo_adquisicion)),",
+				"          stock_actual = toInteger(stock_actual)) ~> derivedColumn6",
+				"derivedColumn6 select(mapColumn(",
+				"          codigo_producto,",
+				"          nombre_producto,",
+				"          categoria,",
+				"          precio_venta,",
+				"          costo_adquisicion,",
+				"          stock_actual,",
+				"          sucursal,",
+				"          proveedor,",
+				"          ultima_reposicion,",
+				"          activo",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 aggregate(groupBy(codigo_producto),",
+				"     stock_actual = sum(stock_actual),",
+				"          nombre_producto = first(nombre_producto),",
+				"          categoria = first(categoria),",
+				"          precio_venta = first(precio_venta),",
+				"          costo_adquisicion = first(costo_adquisicion),",
+				"          sucursal = first(sucursal),",
+				"          proveedor = first(proveedor),",
+				"          ultima_reposicion = first(ultima_reposicion),",
+				"          activo = first(activo)) ~> aggregate1",
+				"aggregate1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          codigo_producto as string,",
+				"          nombre_producto as string,",
+				"          categoria as string,",
+				"          precio_venta as decimal(18,2),",
+				"          costo_adquisicion as decimal(18,2),",
+				"          stock_actual as integer,",
+				"          sucursal as string,",
+				"          proveedor as string,",
+				"          ultima_reposicion as date,",
+				"          activo as boolean",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          codigo_producto,",
+				"          nombre_producto,",
+				"          categoria,",
+				"          precio_venta,",
+				"          costo_adquisicion,",
+				"          stock_actual,",
+				"          sucursal,",
+				"          proveedor,",
+				"          ultima_reposicion,",
+				"          activo",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
