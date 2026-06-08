@@ -27,9 +27,24 @@
 						"type": "DatasetReference"
 					},
 					"name": "source3"
+				},
+				{
+					"dataset": {
+						"referenceName": "silver_inventario",
+						"type": "DatasetReference"
+					},
+					"name": "source4"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "silver_ventas_consolidadas",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
 			"transformations": [
 				{
 					"name": "select1"
@@ -57,6 +72,21 @@
 				},
 				{
 					"name": "derivedColumn4"
+				},
+				{
+					"name": "derivedColumn5"
+				},
+				{
+					"name": "derivedColumn6"
+				},
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "select4"
+				},
+				{
+					"name": "filter1"
 				}
 			],
 			"scriptLines": [
@@ -108,6 +138,22 @@
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> source3",
+				"source(output(",
+				"          codigo_producto as string,",
+				"          nombre_producto as string,",
+				"          categoria as string,",
+				"          precio_venta as decimal(18,2),",
+				"          costo_adquisicion as decimal(18,2),",
+				"          stock_actual as integer,",
+				"          sucursal as string,",
+				"          proveedor as string,",
+				"          ultima_reposicion as date,",
+				"          activo as boolean",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source4",
 				"source1 select(mapColumn(",
 				"          id_transaccion_origen = ID_Venta,",
 				"          fecha_venta = Fecha_Venta,",
@@ -159,7 +205,70 @@
 				"      toDate(fecha_venta, 'dd-MM-yyyy'),   \r",
 				"       toDate(      \r",
 				"          regexReplace(fecha_venta, '(?i) de ', ' '),        'dd MMMM yyyy'    )),",
-				"          nombre_producto_original = initCap(regexReplace(trim(nombre_producto_original),'\\\\s+',' '))) ~> derivedColumn4"
+				"          precio_unitario = toDecimal(regexReplace(toString (precio_unitario), '[^0-9.]', '')),",
+				"          nombre_producto_original = initCap(regexReplace(trim(nombre_producto_original),'\\\\s+',' ')),",
+				"          cantidad = toInteger(cantidad)) ~> derivedColumn4",
+				"derivedColumn4 derive(precio_unitario = iifNull(precio_unitario, 0.0, precio_unitario),",
+				"          costo_envio = iifNull(costo_envio, \"0.0\", costo_envio),",
+				"          cantidad = iifNull(cantidad, 0, cantidad)) ~> derivedColumn5",
+				"derivedColumn5 derive(monto_total = precio_unitario * cantidad) ~> derivedColumn6",
+				"derivedColumn6, source4 lookup(nombre_producto_original == nombre_producto,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup1",
+				"lookup1 select(mapColumn(",
+				"          id_transaccion_origen,",
+				"          fecha_venta,",
+				"          nombre_producto_original,",
+				"          cantidad,",
+				"          precio_unitario,",
+				"          canal_venta,",
+				"          cliente_nombre,",
+				"          metodo_pago,",
+				"          costo_envio,",
+				"          monto_total,",
+				"          codigo_producto",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select4",
+				"select4 filter(!isNull(codigo_producto)) ~> filter1",
+				"filter1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          id_transaccion_origen as string,",
+				"          fecha_venta as timestamp,",
+				"          codigo_producto as string,",
+				"          nombre_producto_original as string,",
+				"          cantidad as integer,",
+				"          precio_unitario as decimal(18,2),",
+				"          monto_total as decimal(18,2),",
+				"          canal_venta as string,",
+				"          cliente_nombre as string,",
+				"          metodo_pago as string,",
+				"          costo_envio as decimal(18,2),",
+				"          fecha_carga as timestamp",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          id_transaccion_origen,",
+				"          fecha_venta,",
+				"          codigo_producto,",
+				"          nombre_producto_original,",
+				"          cantidad,",
+				"          precio_unitario,",
+				"          monto_total,",
+				"          canal_venta,",
+				"          cliente_nombre,",
+				"          metodo_pago,",
+				"          costo_envio",
+				"     )) ~> sink1"
 			]
 		}
 	}

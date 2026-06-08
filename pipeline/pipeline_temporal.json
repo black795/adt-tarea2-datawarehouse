@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataflow": {
-						"referenceName": "df_bronze_inventario",
+						"referenceName": "df_bronze_ventas_consolidadas",
 						"type": "DataFlowReference"
 					},
 					"compute": {
