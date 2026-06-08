@@ -1,0 +1,207 @@
+{
+	"name": "df_gold_hechos_ventas",
+	"properties": {
+		"folder": {
+			"name": "gold"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "silver_ventas_consolidadas",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				},
+				{
+					"dataset": {
+						"referenceName": "gold_dim_canal",
+						"type": "DatasetReference"
+					},
+					"name": "source2"
+				},
+				{
+					"dataset": {
+						"referenceName": "gold_dim_cliente",
+						"type": "DatasetReference"
+					},
+					"name": "source3"
+				},
+				{
+					"dataset": {
+						"referenceName": "gold_dim_producto",
+						"type": "DatasetReference"
+					},
+					"name": "source4"
+				},
+				{
+					"dataset": {
+						"referenceName": "gold_dim_tiempo",
+						"type": "DatasetReference"
+					},
+					"name": "source5"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "gold_hechos_ventas",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "lookup2"
+				},
+				{
+					"name": "lookup3"
+				},
+				{
+					"name": "lookup4"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "select1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          id_transaccion_origen as string,",
+				"          fecha_venta as timestamp,",
+				"          codigo_producto as string,",
+				"          nombre_producto_original as string,",
+				"          cantidad as integer,",
+				"          precio_unitario as decimal(18,2),",
+				"          monto_total as decimal(18,2),",
+				"          canal_venta as string,",
+				"          cliente_nombre as string,",
+				"          metodo_pago as string,",
+				"          costo_envio as decimal(18,2),",
+				"          fecha_carga as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source1",
+				"source(output(",
+				"          canal_key as integer,",
+				"          nombre_canal as string,",
+				"          tipo_canal as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source2",
+				"source(output(",
+				"          cliente_key as integer,",
+				"          nombre_cliente as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source3",
+				"source(output(",
+				"          producto_key as integer,",
+				"          codigo_producto as string,",
+				"          nombre_producto as string,",
+				"          categoria as string,",
+				"          proveedor as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source4",
+				"source(output(",
+				"          fecha_key as integer,",
+				"          fecha as date,",
+				"          dia_semana as integer,",
+				"          nombre_dia as string,",
+				"          dia_mes as integer,",
+				"          mes as integer,",
+				"          nombre_mes as string,",
+				"          trimestre as integer,",
+				"          anio as integer,",
+				"          es_fin_semana as boolean",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source5",
+				"source1, source2 lookup(canal_venta == nombre_canal,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup1",
+				"lookup1, source3 lookup(cliente_nombre == nombre_cliente,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup2",
+				"lookup2, source4 lookup(source1@codigo_producto == source4@codigo_producto,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup3",
+				"derivedColumn1, source5 lookup(fecha_venta == fecha,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup4",
+				"lookup3 derive(fecha_venta = toDate(fecha_venta)) ~> derivedColumn1",
+				"lookup4 select(mapColumn(",
+				"          id_transaccion_origen,",
+				"          cantidad,",
+				"          precio_unitario,",
+				"          monto_total,",
+				"          metodo_pago,",
+				"          costo_envio,",
+				"          canal_key,",
+				"          cliente_key,",
+				"          producto_key,",
+				"          fecha_key",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          venta_key as integer,",
+				"          fecha_key as integer,",
+				"          cliente_key as integer,",
+				"          producto_key as integer,",
+				"          canal_key as integer,",
+				"          cantidad as integer,",
+				"          precio_unitario as decimal(18,2),",
+				"          monto_total as decimal(18,2),",
+				"          costo_envio as decimal(18,2),",
+				"          metodo_pago as string,",
+				"          id_transaccion_origen as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          fecha_key,",
+				"          cliente_key,",
+				"          producto_key,",
+				"          canal_key,",
+				"          cantidad,",
+				"          precio_unitario,",
+				"          monto_total,",
+				"          costo_envio,",
+				"          metodo_pago,",
+				"          id_transaccion_origen",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
