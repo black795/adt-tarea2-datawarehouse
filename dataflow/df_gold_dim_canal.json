@@ -1,0 +1,60 @@
+{
+	"name": "df_gold_dim_canal",
+	"properties": {
+		"folder": {
+			"name": "gold"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "silver_ventas_consolidadas",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "gold_dim_canal",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [],
+			"scriptLines": [
+				"source(output(",
+				"          canal_venta as string,",
+				"          tipo_canal as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'SELECT DISTINCT s.canal_venta,\\n        CASE \\n            WHEN s.canal_venta = \\'Online\\' THEN \\'Online\\'\\n            ELSE \\'Físico\\' \\n        END AS tipo_canal\\n    FROM silver.ventas_consolidadas s\\n\\n',",
+				"     format: 'query') ~> source1",
+				"source1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          canal_key as integer,",
+				"          nombre_canal as string,",
+				"          tipo_canal as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          nombre_canal = canal_venta,",
+				"          tipo_canal",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
