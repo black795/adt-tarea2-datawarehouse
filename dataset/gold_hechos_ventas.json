@@ -1,0 +1,76 @@
+{
+	"name": "gold_hechos_ventas",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "dw_ventas",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "gold"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "venta_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "fecha_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "cliente_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "producto_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "canal_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "cantidad",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "precio_unitario",
+				"type": "decimal",
+				"precision": 18,
+				"scale": 2
+			},
+			{
+				"name": "monto_total",
+				"type": "decimal",
+				"precision": 18,
+				"scale": 2
+			},
+			{
+				"name": "costo_envio",
+				"type": "decimal",
+				"precision": 18,
+				"scale": 2
+			},
+			{
+				"name": "metodo_pago",
+				"type": "varchar"
+			},
+			{
+				"name": "id_transaccion_origen",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "gold",
+			"table": "hechos_ventas"
+		}
+	}
+}

@@ -1,0 +1,33 @@
+{
+	"name": "gold_dim_canal",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "dw_ventas",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "gold"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "canal_key",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "nombre_canal",
+				"type": "varchar"
+			},
+			{
+				"name": "tipo_canal",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "gold",
+			"table": "dim_canal"
+		}
+	}
+}
